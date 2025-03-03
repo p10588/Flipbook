@@ -82,19 +82,6 @@ def send_command(method, params=[]):
         print(f"HTTP 請求錯誤: {e}")
         return None
 
-# 拍照命令
-def start_rec_mode():
-    response = send_command("startContShooting")
-    if response is not None:
-        # 檢查是否有 'result' 或 'error' 鍵
-        if "result" in response:
-            print("Start Record Mode")
-        elif "error" in response:
-            print(f"Start Record Mode Fail: {response['error']}")
-        else:
-            print("Unknown:", response)
-    else:
-        print("cant connect camera")
 
 # 拍照命令
 def take_picture():
@@ -127,6 +114,12 @@ def continuous_shooting(num_shots, delay=1):
             print(f"第 {i+1} 張照片無法與相機建立連線。")
         time.sleep(delay)  # 設置間隔時間，控制連拍間的時間
 
+def continuous_shooting_timer(duration):
+    print(f"開始連拍， {duration} 秒")
+    send_command("startContShooting")
+    time.sleep(duration)  # 設置間隔時間，控制連拍間的時間
+    send_command("stopContShooting")
+
 def run_progress():
     # 檢查相機是否處於長時間拍攝模式
     event_response = send_command("getEvent")
@@ -137,14 +130,26 @@ def run_progress():
         return
     
     # 確保相機未在錄影模式中（如果需要）
-    print("啟動錄影模式...")
+    print("Start Rec Mode...")
     send_command("startRecMode")
+
+    # 等待相機準備（如果需要）
+    time.sleep(7)
+
+    print("Switch to Continuous Shooting Mode...")
+    send_command("setContShootingMode", [{"contShootingMode": "Continuous"}])
 
     # 等待相機準備（如果需要）
     time.sleep(2)
 
+    print("Switch to Continuous Shooting Speed Mid...")
+    send_command("setContShootingSpeed", [{"contShootingSpeed": "Mid"}])
+
+    time.sleep(2)
+
     # 再次嘗試拍照
-    continuous_shooting(5, 0.2)
+    continuous_shooting_timer(3.5)
+    #continuous_shooting(5, 0.2)
 
 
 def main():
